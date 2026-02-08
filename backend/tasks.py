@@ -45,7 +45,7 @@ def step_process_document(file_path: str):
             "text_preview": full_text[:200]
         }
 
-    llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-pro", google_api_key=api_key)
+    llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-2.5-flash", google_api_key=api_key)
 
     # Summary Prompt
     summary_prompt = PromptTemplate(
@@ -65,8 +65,12 @@ def step_process_document(file_path: str):
 
     # 3. RAG Ingestion (Async ideally, but doing here for simplicity)
     try:
-        ingest_document(file_path)
+        print(f"Calling ingest_document for {file_path}")
+        ingest_document(file_path, documents=docs)
+        print("ingest_document completed")
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Ingestion failed: {e}")
 
     return {

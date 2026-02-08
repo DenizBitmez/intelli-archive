@@ -10,17 +10,18 @@ print(f"API Key present: {bool(api_key)}")
 if api_key:
     try:
         genai.configure(api_key=api_key)
-        print("Listing models...")
-        found_any = False
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                print(f"- {m.name}")
-                found_any = True
-        
-        if not found_any:
-            print("No models found with 'generateContent' support.")
-            
+        with open("models_list.txt", "w", encoding="utf-8") as f:
+            f.write("Listing models...\n")
+            found_any = False
+            for m in genai.list_models():
+                if 'embedContent' in m.supported_generation_methods:
+                    f.write(f"- {m.name}\n")
+                    found_any = True
+            if not found_any:
+                f.write("No models found with 'embedContent' support.\n")
     except Exception as e:
-        print(f"Error: {e}")
+        with open("models_list.txt", "w", encoding="utf-8") as f:
+            f.write(f"Error: {e}\n")
 else:
-    print("Cannot check models without API key.")
+    with open("models_list.txt", "w", encoding="utf-8") as f:
+        f.write("Cannot check models without API key.\n")

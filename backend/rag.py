@@ -16,15 +16,30 @@ def get_loader(file_path):
         loader = PyPDFLoader(file_path)
     return TextLoader(file_path)
 
-def ingest_document(file_path: str):
+class SafeGoogleGenerativeAIEmbeddings(GoogleGenerativeAIEmbeddings):
+    def embed_query(self, text: str):
+        res = super().embed_query(text)
+        # Force conversion to standard python list of floats to satisfy Chroma
+        return [float(x) for x in res]
+    
+    def embed_documents(self, texts, **kwargs):
+        res = super().embed_documents(texts, **kwargs)
+        # Force conversion for list of lists
+        return [[float(x) for x in doc] for doc in res]
+
+def ingest_document(file_path: str, documents=None):
     """
     Load, split, and ingest document into ChromaDB using Gemini Embeddings.
+    If 'documents' list is provided, skip loading from file.
     """
-    if not os.path.exists(file_path):
-        return
-    
-    loader = get_loader(file_path)
-    docs = loader.load()
+    if documents:
+        docs = documents
+    else:
+        if not os.path.exists(file_path):
+            print(f"File not found: {file_path}")
+            return
+        loader = get_loader(file_path)
+        docs = loader.load()
     
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
@@ -38,9 +53,11 @@ def ingest_document(file_path: str):
         print("Skipping ingestion: No API Key")
         return
 
+    model_name = "models/gemini-embedding-001"
+    print(f"DEBUG: Initializing Chroma with model={model_name}")
     vectorstore = Chroma(
         persist_directory=CHROMA_PATH, 
-        embedding_function=GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)
+        embedding_function=SafeGoogleGenerativeAIEmbeddings(model=model_name, task_type="retrieval_document")
     )
     vectorstore.add_documents(splits)
 
@@ -54,16 +71,20 @@ def get_answer(query: str, file_path: str):
 
     vectorstore = Chroma(
         persist_directory=CHROMA_PATH, 
-        embedding_function=GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)
+        embedding_function=SafeGoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", task_type="retrieval_query")
     )
     
     # Filter by source file
+    print(f"DEBUG: Querying with filter source={file_path}")
     retriever = vectorstore.as_retriever(
         search_type="similarity",
         search_kwargs={"k": 5, "filter": {"source": file_path}}
     )
     
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=api_key)
+    docs = retriever.invoke(query)
+    print(f"DEBUG: Retrieved {len(docs)} documents")
+    
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
     
     system_prompt = (
         "You are an assistant for question-answering tasks. "
