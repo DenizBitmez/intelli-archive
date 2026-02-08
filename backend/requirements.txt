@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+celery
+redis
+python-multipart
+pydantic
+requests
+python-dotenv
+pypdf
+tiktoken
+chromadb
+langchain==0.1.20
+langchain-community==0.0.38
+langchain-core==0.1.52
+langchain-text-splitters
+langchain-google-genai
+langchain-chroma
