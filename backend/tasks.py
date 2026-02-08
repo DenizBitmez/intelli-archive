@@ -45,7 +45,7 @@ def step_process_document(file_path: str):
             "text_preview": full_text[:200]
         }
 
-    llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-1.5-flash", google_api_key=api_key)
+    llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-pro", google_api_key=api_key)
 
     # Summary Prompt
     summary_prompt = PromptTemplate(

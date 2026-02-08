@@ -63,7 +63,7 @@ def get_answer(query: str, file_path: str):
         search_kwargs={"k": 5, "filter": {"source": file_path}}
     )
     
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=api_key)
     
     system_prompt = (
         "You are an assistant for question-answering tasks. "
